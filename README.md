@@ -1,5 +1,5 @@
 ![tricycle logo]
-(https://github.com/StellarArmy/tricycle/blob/master/logo.png)
+(https://github.com/StellarArmy/tricycle/blob/master/tricycle.gif)
 
 3 Periods, 2 Stars, 1 Age
 
