@@ -21,23 +21,6 @@ class LightCurve(object):
     depth : float
         Relative eclipse depth.
 
-    Attributes
-    ----------
-    time : ndarray
-        The observation times, in days.
-    flux : ndarray
-        The system flux. May be in physical or relative units.
-    err : ndarray
-        The flux errors. Should have same units as `flux`.
-    p_orb : float
-        Orbital period in days.
-    t_0 : float
-        Reference time of mid-eclipse in days.
-    e_dur : float
-        Eclipse duration in days.
-    depth : float
-        Relative eclipse depth.
-
     """
     def __init__(self, time, flux, err, p_orb, t_0, e_dur, depth):
 

@@ -1,8 +1,5 @@
-"""
-This is a module to simulate and analyze light curves of 
-spotted eclipsing binaries. 
-"""
 import numpy as np
+
 from lightcurve import LightCurve
 
 
@@ -10,16 +7,10 @@ class ModelBinary(LightCurve):
     """
     Model eclipsing binary light curve.
 
+    See parent LightCurve class documentation of shared parameters.
+
     Parameters
     ----------
-    p_orb : float
-        Orbital period in days.
-    t_0 : float
-        Reference time of mid-eclipse in days.
-    e_dur : float
-        Eclipse duration in days.
-    depth : float
-        Relative eclipse depth.
     p_rot1 : float
         Rotation period of star 1 in days.
     p_rot2 : float
@@ -35,25 +26,7 @@ class ModelBinary(LightCurve):
     sc : bool
         Default is for short cadence. Set to False for long cadence.
 
-    Attributes
-    ----------
-    time : ndarray
-        The observation times, in days.
-    flux : ndarray
-        The system flux. May be in physical or relative units.
-    err : ndarray
-        The flux errors. Should have same units as `flux`.
-    p_orb : float
-        Orbital period in days.
-    t_0 : float
-        Reference time of mid-eclipse in days.
-    e_dur : float
-        Eclipse duration in days.
-    depth : float
-        Relative eclipse depth.
-
     """
-
     def __init__(self, p_orb=7.07, t_0=0.0, e_dur=0.27, depth=0.5, p_rot1=1.51,
                  p_rot2=0.80, amp_1=0.03, amp_2=0.02, length=100.0, sig=0.02,
                  sc=True):
@@ -71,6 +44,7 @@ class ModelBinary(LightCurve):
         Make a light curve.
 
         """
+        # One minute exposure time for short cadence, 30 minute for long.
         if sc:
             exptime = 1.0 / 60.0 / 24.0
         else:
