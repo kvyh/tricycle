@@ -32,43 +32,28 @@ class LightCurve(object):
         self.e_dur = e_dur
         self.depth = depth
 
-    def cut_eclipses(self, window=1.0):
+    def get_period(self, units='days'):
         """
-        Return light curve with eclipses removed.
+        Return the orbital period.
 
         Parameters
         ----------
-        window : float, optional
-            Width of the window around the eclipse to cut, in fractions of
-            the eclipse duration. (Default: 1.0)
+        units : str
+            Desired units for period: days, hours, or minutes.
 
         Returns
         -------
-        time_cut : ndarray
-            Observation times.
-        flux : ndarray
-            Fluxes.
-        err : ndarray
-            Flux errors.
+        period : float
+            The orbital period in the specified units.
 
         """
-        raise Exception('This module has not yet been written!')
+        if units == 'days':
+            per = self.p_orb
+        elif units == 'hours':
+            per = self.p_orb*24.
+        elif units == 'minutes':
+            per = self.p_orb*24.*60.
+        else:
+            raise ValueError('Invalid choice of units.')
 
-    def periodogram(self, eclipses=False):
-        """
-        Return periodogram for light curve.
-
-        Parameters
-        ----------
-        eclipses : bool, optional
-            Include eclipses if True. (Default: False)
-
-        Returns
-        -------
-        period : ndarray
-            An array of periods.
-        power : ndarray
-            The power at the corresponding periods.
-
-        """
-        raise Exception('This module has not yet been written!')
+        return per
