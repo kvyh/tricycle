@@ -1,14 +1,45 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 14 16:26:56 2014
+import pandas as pd
+import numpy as np
+import MySQLdb
+import socket
 
-@author: eakruse
-"""
 
-def dbconnect(host='tddb.astro.washington.edu', user='tddb',
-              password='tddb', db='Kepler', **kwargs):
+def select_kics(catfile='villanova-db.csv', pmin=0.0, pmax=None):
     """
-    Log into a database using MySQLdb.
+    Return KIC IDs based on system parameters.
+
+    Inputs
+    ----------
+    catfile : string
+        Name of catalog file. (Default: villanova-db.csv)
+    pmin : float, optional
+        Minimum orbital period in days. (Default: 0.0)
+    pmax : float, optional
+        maximum orbital period in days.
+
+    Returns
+    -------
+    kics : array-like
+        KIC IDs matching search criteria.
+
+    """
+    # Construct the query string.
+    qstring = 'period > %s & ' % str(pmin)
+    if pmax:
+        qstring += 'period < %s & ' % str(pmax)
+
+    # Load the Villanova catalog, find the matching KIC IDs.
+    df = pd.read_csv(catfile)
+    kics = df.query(qstring[:-2])['KIC'].values.astype(int).astype(str)
+
+    print 'Found %d systems in catalog meeting criteria.' % kics.size
+    return kics.astype(int)
+
+
+def __dbconnect(host='tddb.astro.washington.edu', user='tddb', password='tddb',
+                db='Kepler'):
+    """
+    Log into a database using MySQLdb. Written by Ethan Kruse.
 
     Parameters
     ----------
@@ -25,22 +56,22 @@ def dbconnect(host='tddb.astro.washington.edu', user='tddb',
     -------
     dbconnect : Connect
         MySQLdb connector.
+
     """
-    import MySQLdb
     return MySQLdb.connect(host=host, user=user, passwd=password, db=db,
                            connect_timeout=0)
 
 
-def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
+def loadlc_db(kic, usepdc=True, lc=True, **kwargs):
     """
-    Load Kepler data from the local tddb database.
+    Load Kepler data from the local tddb database. Written by Ethan Kruse.
 
     Can pass optional MySQLdb keyword arguments for logging into the database
     (host, user, passwd, db). Those default values should work though.
 
     Parameters
     ----------
-    KIC : int
+    kic : int
         Kepler Input Catalog number for the target.
     usepdc : bool, optional
         Defaults to True. If True, use the PDCSAP data
@@ -62,11 +93,8 @@ def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
         Kepler quarter
     quality : ndarray
         Kepler data quality flag
-    """
-    import numpy as np
-    import MySQLdb
-    import socket
 
+    """
     tablename = 'source'
     if lc:
         lcflag = "LCFLAG > 0"
@@ -85,12 +113,14 @@ def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
         # try multiple times in case of sporadic database timeouts
         while ct < 5 and not gotit:
             try:
-                db = dbconnect(**kwargs)
+                db = __dbconnect(**kwargs)
                 cursor = db.cursor()
 
-                toex = "SELECT cadenceno, quarter, sap_quality, time, {0} FROM {2} WHERE keplerid = %s AND {1};".format(fluxstr, lcflag, tablename)
+                toex = "SELECT cadenceno, quarter, sap_quality, time, {0} FROM" \
+                       " {2} WHERE keplerid = %s AND {1};"\
+                    .format(fluxstr, lcflag, tablename)
 
-                cursor.execute(toex, (int(KIC),))
+                cursor.execute(toex, (int(kic),))
                 results = cursor.fetchall()
                 cadence = np.array([x[0] for x in results], dtype=np.int32)
                 quarter = np.array([x[1] for x in results], dtype=np.int32)
@@ -100,21 +130,28 @@ def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
                 fluxerr = np.array([x[5] for x in results], dtype=np.float32)
                 cursor.close()
                 db.close()
-                # for some reason some results are coming back with arrays of length 0.
+                # for some reason some results are coming back with arrays
+                # of length 0.
                 if len(time) > 0:
                     gotit = True
                 ct += 1
             except MySQLdb.OperationalError:
-                print "mysqldb connection failed on attempt {0} of {1}.\nTrying again.".format(ct+1, 5)
+                print "mysqldb connection failed on attempt {0} of {1}.\n" \
+                      "Trying again.".format(ct + 1, 5)
                 ct += 1
     else:
         import paramiko
-        toex = "SELECT cadenceno, quarter, sap_quality, time, {0} FROM {3} WHERE keplerid = {2} AND {1};".format(fluxstr, lcflag,int(KIC), tablename)
+
+        toex = "SELECT cadenceno, quarter, sap_quality, time, {0} FROM {3} " \
+               "WHERE keplerid = {2} AND {1};"\
+            .format(fluxstr, lcflag, int(kic), tablename)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         # no password because my SSH keygen doesn't have a password
         ssh.connect('hail.astro.washington.edu', username='eakruse')
-        stdin, stdout, stderr = ssh.exec_command('mysql -h tddb.astro.washington.edu -D Kepler -u eakruse --password=tddbKepler -e "{0}"'.format(toex))
+        stdin, stdout, stderr = ssh.exec_command(
+            'mysql -h tddb.astro.washington.edu -D Kepler -u eakruse '
+            '--password=tddbKepler -e "{0}"'.format(toex))
         results = stdout.read().splitlines()
         results = results[1:]
 
@@ -131,7 +168,6 @@ def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
         fluxerr = np.array([float(x.split('\t')[5]) for x in results],
                            dtype=np.float32)
         ssh.close()
-
 
     # guarantee the light curve is in sequential order
     # %timeit says that doing the ordering in python is faster than including
@@ -156,4 +192,3 @@ def loadlc_db(KIC, usepdc=True, lc=True, **kwargs):
         print 'No light curves found!'
 
     return time, flux, fluxerr, cadence, quarter, quality
-
