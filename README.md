@@ -1,5 +1,5 @@
 ![tricycle logo]
-(https://github.com/StellarArmy/tricycle/blob/master/tricycle.gif)
+(https://github.com/StellarArmy/tricycle/blob/master/plots/tricycle.gif)
 
 3 Periods, 2 Stars, 1 Age
 
@@ -47,7 +47,7 @@ plt.show()
 ```
 
 ![Example Light Curve]
-(https://github.com/StellarArmy/tricycle/blob/master/lightcurve.png)
+(https://github.com/StellarArmy/tricycle/blob/master/plots/lightcurve.png)
 
 ### Parameters ###
 ----------
