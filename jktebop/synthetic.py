@@ -1,22 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+
 import numpy as np
+
 import jktebop_f2py
+
 
 class BopIt(object):
     """
     Simulate an eclipsing binary using JKTEBOP.
 
+    A description of the parameters are below. Consult the orignal FORTRAN code
+    for more extensive documentation. Credit to Ian Crossfield for setting up
+    FORTRAN interface and to Dan Forman-Mackey for handling keyword arguments.
+
     Parameters
     ----------
     sine_star : tuple, optional
-        The star that each sine belongs to. -1 for primary, -2 for secondary.
+        The star that each sine belongs to. -1 for star A, -2 for star B.
     sine_params : tuple, optional
         For each sine, provide the time of zero phase (HJD), period (days),
-        and amplitude (relative flux) as (hjd_0, period, amp).
-    ldtype : tuple, optional
-        Type of limb darkening.
+        and amplitude (relative flux) as (hjd_0, period, amplitude).
+    ldtype : 2-sequence of ints, optional
+        Type of limb darkening for stars (A, B). (Default: (4, 4))
+        1: linear
+        2: linear + logarithmic
+        3: linear + square root
+        4: linear + quadratic
+        5: linear + cubic
+        6: Claret's four parameter form
 
     Other Parameters
     ----------------
@@ -27,41 +40,82 @@ class BopIt(object):
         (Default: 0.1)
     rsr : float, optional
         Ratio of stellar radii. (Default: 1.0)
-    ld_a :
-    ld_b :
-    inc :
-    ecc :
-    omg_bar :
-    gd_a :
-    gd_b :
-    rl_a :
-    rl_b :
-    mr :
-    tll :
-    l3 :
-    pcf :
-    lsf :
-    irs :
-    p_orb :
-    t_0 :
-    ld2_a :
-    ld3_a :
-    ld4_a :
-    ld2_b :
-    ld3_b :
-    ld4_b :
-    rv_a :
-    rv_b :
-    sys_a :
-    sys_b :
+    ld_a : float, optional
+        Linear limb darkening coefficient for star A. Default of 0.3985 is from
+        Sing et al. (2010) for quadratic law, and a 5750K dwarf.
+    ld_b : float, optional
+        Linear limb darkening coefficient for star B. (Default: 0.3985)
+    inc : float, optional
+        Orbital inclination in degrees. (Default: 90.0)
+    ecc : float, optional
+        Orbital eccentricity. (Default: 0.0)
+    omg_bar : float, optional
+        Longitude of periapsis in degrees. (Default: 0.0)
+    gd_a : float, optional
+        Gravity darkening of star A. (Default: 0.0)
+    gd_b : float, optional
+        Gravity darkening of star B. (Default: 0.0)
+    rl_a : float, optional
+        Reflected light for star A. (Default: 0.0)
+    rl_b : float, optional
+        Reflected light for star B. (Default: 0.0)
+    mr : float, optional
+        Mass ratio (M_b / M_a). Only used to calculate deformations. Set to
+        -1 for fixed spherical stars. (Default: 1.0)
+    tll : float, optional
+        Tidal lead/lag angle (degrees). (Default: 0.0)
+    l3 : float, optional
+        Third light in units where (L_A + L_B + L_C = 1) (Default: 0.0)
+    pcf : float, optional
+        Phase correction factor (i.e. phase of primary eclipse). (Default: 0.0)
+    lsf : float, optional
+        Light scaling factor in magnitudes. (Default: 0.0)
+    irs : float, optional
+        Integration ring size in degrees. (Default: 1.0)
+    p_orb : float, optional
+        Orbital period in days. (Default: 3.35)
+    t_0 : float, optional
+        Reference time of primary eclipse in HJD. (Default: 54833.0)
+        BJD = 2454833.0 is the zero point of the Kepler data.
+    ld2_a : float, optional
+        Limb darkening coefficient 2 for star A. (Default: 0.2586)
+        Default is from Sing et al. as described above.
+    ld3_a : float, optional
+        Limb darkening coefficient 3 for star A. (Default: 0.0)
+    ld4_a : float, optional
+        Limb darkening coefficient 4 for star A. (Default: 0.0)
+    ld2_b : float, optional
+        Limb darkening coefficient 2 for star B. (Default: 0.2586)
+    ld3_b : float, optional
+        Limb darkening coefficient 3 for star B. (Default: 0.0)
+    ld4_b : float, optional
+        Limb darkening coefficient 4 for star B. (Default: 0.0)
+    rv_a : float, optional
+        Radial velocity amplitude of star A in km/s. (Default: 0.0)
+    rv_b : float, optional
+        Radial velocity amplitude of star B in km/s. (Default: 0.0)
+    sys_a : float, optional
+        Systemic velocity of star A in km/s. (Default: 0.0)
+    sys_b : float, optional
+        Systemic velocity of star B in km/s. (Default: 0.0)
 
     Examples
     --------
-    >>> bop_it = BopIt()
-    >>> time, flux = bop_it.light_it()
+    Simulate a 15.5 day period binary.
+    Star A: 1% modulation with a period of 3.71 days.
+    Star B: 1.5% modulation with a period of 1.21 days.
+
+    >>> sine_star = (-1, -2)
+    >>> sine_params = ((54830, 3.71, 0.01), (54831, 1.21, 0.015))
+    >>> bop_it = BopIt(sfsr=0.2, p_orb=15.5, csbr=0.8,
+    >>>                sine_star=sine_star, sine_params=sine_params)
+
+    Make a light curve with some noise.
+    >>> phase, time, flux = bop_it.light_it(sigma=0.005)
 
     """
-    def __init__(self, sine_star=None, sine_params=None, ldtype=(1, 1), **kwargs):
+    def __init__(self, sine_star=None, sine_params=None, ldtype=(4, 4),
+                 **kwargs):
 
         self.ldtype = ldtype
 
@@ -69,13 +123,13 @@ class BopIt(object):
         self.params = OrderedDict([('csbr', 1.0),
                                   ('sfsr', 0.1),
                                   ('rsr', 1.0),
-                                  ('ld_a', 0.0),
-                                  ('ld_b', 0.0),
+                                  ('ld_a', 0.3985),
+                                  ('ld_b', 0.3985),
                                   ('inc', 90.0),
                                   ('ecc', 0.0),
                                   ('omg_bar', 0.0),
-                                  ('gd_a', 1.0),
-                                  ('gd_b', 1.0),
+                                  ('gd_a', 0.0),
+                                  ('gd_b', 0.0),
                                   ('rl_a', 0.0),
                                   ('rl_b', 0.0),
                                   ('mr', 1.0),
@@ -86,10 +140,10 @@ class BopIt(object):
                                   ('irs', 1.0),
                                   ('p_orb', 3.35),
                                   ('t_0', 54833.0),
-                                  ('ld2_a', 0.0),
+                                  ('ld2_a', 0.2586),
                                   ('ld3_a', 0.0),
                                   ('ld4_a', 0.0),
-                                  ('ld2_b', 0.0),
+                                  ('ld2_b', 0.2586),
                                   ('ld3_b', 0.0),
                                   ('ld4_b', 0.0),
                                   ('rv_a', 0.0),
@@ -123,7 +177,7 @@ class BopIt(object):
 
             # Add sine parameters to parameter array.
             for idx, sine_params in enumerate(sine_params):
-                self.vv[30 + idx * 3:33 + idx * 3] = sine_params
+                self.vv[(30 + idx * 3):(33 + idx * 3)] = sine_params
 
             self.psine[0:len(sine_star)] = sine_star
             self.nsine = len(sine_star)
@@ -150,6 +204,8 @@ class BopIt(object):
 
         Returns
         -------
+        phase : array_like
+            Orbital phase.
         time : array_like
             Observation times in HJD.
         flux : array_like
@@ -175,6 +231,8 @@ class BopIt(object):
         # Create time and flux arrays.
         time = np.arange(self.params['t_0'], self.params['t_0'] + length + dt,
                          dt)
+        phase = ((time - self.params['t_0']) % self.params['p_orb']) / \
+                self.params['p_orb']
         flux = np.empty_like(time)
 
         # Loop through time and run JKTEBOP.
@@ -188,4 +246,4 @@ class BopIt(object):
         if sigma is not None:
             flux += np.random.normal(0, sigma, len(flux))
 
-        return time, flux
+        return phase, time, flux
