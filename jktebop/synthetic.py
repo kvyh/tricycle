@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+import random
+import signal
 
 import numpy as np
 
@@ -11,9 +13,13 @@ class BopIt(object):
     """
     Simulate an eclipsing binary using JKTEBOP.
 
+    JKTEBOP written by John Southworth
+    http://www.astro.keele.ac.uk/jkt/codes/jktebop.html
+
     A description of the parameters are below. Consult the orignal FORTRAN code
-    for more extensive documentation. Credit to Ian Crossfield for setting up
-    FORTRAN interface and to Dan Forman-Mackey for handling keyword arguments.
+    for more extensive documentation. Code copied from Ian Crossfield for
+    setting up FORTRAN interface and to Dan Forman-Mackey for handling
+    keyword arguments.
 
     Parameters
     ----------
@@ -232,7 +238,7 @@ class BopIt(object):
         time = np.arange(self.params['t_0'], self.params['t_0'] + length + dt,
                          dt)
         phase = ((time - self.params['t_0']) % self.params['p_orb']) / \
-                self.params['p_orb']
+            self.params['p_orb']
         flux = np.empty_like(time)
 
         # Loop through time and run JKTEBOP.
@@ -247,3 +253,70 @@ class BopIt(object):
             flux += np.random.normal(0, sigma, len(flux))
 
         return phase, time, flux
+
+    @staticmethod
+    def _bop_it(start_time=6, repeats=5):
+        """
+        A silly Easter egg method that (poorly) emulates the game Bop It!
+
+        Parameters
+        ----------
+        start_time : int, optional
+            The starting value of the timeout in seconds. (Default: 6)
+        repeats : int, optional
+            The number of times to repeat a timeout value before decreasing
+            by one second.
+
+        Examples
+        --------
+        Type the same text as the on-screen prompt. Press Enter to start.
+
+        Bop it!
+        Bop it!
+
+        Twist it!
+        Twist it!
+
+        Pull it!
+        Twist it!
+
+        Aaaahhh!!! You lose.
+
+        """
+        commands = ['Bop it!', 'Twist it!', 'Pull it!']
+
+        def interrupted():
+            raise StandardError
+
+        signal.signal(signal.SIGALRM, interrupted)
+
+        def text_input(correct):
+            try:
+                    print '\n{}'.format(correct)
+                    foo = raw_input()
+                    if foo == correct:
+                        return True
+                    else:
+                        return False
+            except StandardError:
+                    return False
+
+        alarm_times = np.arange(repeats, repeats * (start_time + 1))[::-1] / \
+            repeats
+
+        raw_input('\n Type the same text as the on-screen prompt.'
+                  'Press Enter to start.')
+
+        lost = False
+        for alarm_time in alarm_times:
+            draw = random.choice(commands)
+            signal.alarm(alarm_time)
+            okay = text_input(draw)
+
+            if not okay:
+                print "\n\n Aaaahhh!!! You lose.\n"
+                lost = True
+                break
+
+        if not lost:
+            print 'You win!'
