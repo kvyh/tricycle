@@ -30,75 +30,20 @@
         <section id="main-content">
           <p><img src="http://staff.washington.edu/lurie/tricycle.gif" alt="tricycle logo"></p>
 
-<p>Looking through the <em>Kepler</em> <a href="http://keplerebs.villanova.edu">eclipsing binaries</a>, can we find systems with starspot signals from both stars? To find these, look for 3 distinct, non-harmonic, periods.</p>
+<h2>
+<a id="what-is-tricycle" class="anchor" href="#what-is-tricycle" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is tricycle?</h2>
 
-<p>This would give rotation periods for both components (challenge goal: figure out which period comes from which star).</p>
-
-<p>Follow-up spectroscopic observation then gives masses and radii.</p>
+<p>We are looking for <em>Kepler</em> <a href="http://keplerebs.villanova.edu">eclipsing binaries</a>, with starspot signals from both stars. That's three periods: one from the eclipses (telling us about masses and radii), and two from the starspot signals (telling us rotation periods and magnetic activity). As a population, such systems would provide benchmarks for things like stellar evolution models and gyrochronology.</p>
 
 <h2>
-<a id="retrieving-light-curves" class="anchor" href="#retrieving-light-curves" aria-hidden="true"><span class="octicon octicon-link"></span></a>Retrieving Light Curves</h2>
+<a id="project-team" class="anchor" href="#project-team" aria-hidden="true"><span class="octicon octicon-link"></span></a>Project Team</h2>
 
-<p><em>This requires access to the Kepler MySQL database on the UW network.</em></p>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> loadlc_db <span class="pl-k">as</span> ldb
-<span class="pl-k">import</span> get_lightcurves <span class="pl-k">as</span> glc
-<span class="pl-k">import</span> matplotlib.pyplot <span class="pl-k">as</span> plt
-
-<span class="pl-s"><span class="pl-pds">'''</span>Select systems with 10.0 &lt; p_orbit &lt; 10.5<span class="pl-pds">'''</span></span>
-kics <span class="pl-k">=</span> glc.select_kics(<span class="pl-smi">pmin</span><span class="pl-k">=</span><span class="pl-c1">10.0</span>, <span class="pl-smi">pmax</span><span class="pl-k">=</span><span class="pl-c1">10.05</span>)
-
-<span class="pl-s"><span class="pl-pds">'''</span>This returns two KIC IDs<span class="pl-pds">'''</span></span>
-
-<span class="pl-s"><span class="pl-pds">'''</span>Examine the light curves<span class="pl-pds">'''</span></span>
-<span class="pl-k">for</span> kic <span class="pl-k">in</span> kics:
-    time, flux, fluxerr, cadence, quarter, quality <span class="pl-k">=</span> ldb.loadlc_db(kic)
-    plt.plot(time, flux)
-    plt.show() </pre></div>
-
-<h2>
-<a id="simulating-light-curves" class="anchor" href="#simulating-light-curves" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simulating Light Curves</h2>
-
-<p>Start by initializing an EB object, inputing the system parameters.</p>
-
-<div class="highlight highlight-source-python"><pre>eb <span class="pl-k">=</span> tw.EB(<span class="pl-smi">p_orb</span><span class="pl-k">=</span><span class="pl-c1">7.07</span>, <span class="pl-smi">p_rot1</span><span class="pl-k">=</span><span class="pl-c1">1.51</span>, <span class="pl-smi">p_rot2</span><span class="pl-k">=</span><span class="pl-c1">0.80</span>, <span class="pl-smi">depth</span><span class="pl-k">=</span><span class="pl-c1">0.5</span>, <span class="pl-smi">amp_1</span><span class="pl-k">=</span><span class="pl-c1">0.03</span>, <span class="pl-smi">amp_2</span><span class="pl-k">=</span><span class="pl-c1">0.02</span>, <span class="pl-smi">e_dur</span><span class="pl-k">=</span><span class="pl-c1">0.4</span>)</pre></div>
-
-<p>Now make a light curve and plot.</p>
-
-<div class="highlight highlight-source-python"><pre>time, flux <span class="pl-k">=</span> eb.make_lc(<span class="pl-smi">length</span><span class="pl-k">=</span><span class="pl-c1">100</span>, <span class="pl-smi">sig</span><span class="pl-k">=</span><span class="pl-c1">0.02</span>)
-plt.plot(time, flux)
-plt.xlim(<span class="pl-c1">0</span>,<span class="pl-c1">11</span>)
-plt.ylim(<span class="pl-c1">0</span>,<span class="pl-c1">1.2</span>)
-plt.xlabel(<span class="pl-s"><span class="pl-pds">'</span>Time (days)<span class="pl-pds">'</span></span>)
-plt.ylabel(<span class="pl-s"><span class="pl-pds">'</span>Relative Flux<span class="pl-pds">'</span></span>)
-plt.show()</pre></div>
-
-<p><img src="https://github.com/StellarArmy/tricycle/blob/master/plots/lightcurve.png" alt="Example Light Curve"></p>
-
-<h3>
-<a id="parameters" class="anchor" href="#parameters" aria-hidden="true"><span class="octicon octicon-link"></span></a>Parameters</h3>
-
-<hr>
-
-<ul>
-<li>
-<code>p_orb</code> : float - Orbital period in days<br>
-</li>
-<li>
-<code>p_rot1</code> : float - Rotation period of star 1</li>
-<li>
-<code>p_rot2</code> : float - Rotation period of star 2</li>
-<li>
-<code>depth</code> : float - Eclipse depth</li>
-<li>
-<code>amp_1</code> : float - Spot amplitude of star 1</li>
-<li>
-<code>amp 2</code> : Spot amplitude of star 2</li>
-<li>
-<code>e_dur</code> : Eclipse duration in days</li>
-<li>
-<code>sc</code> : Default is for long cadence, set to <code>True</code> for short cadence</li>
-</ul>
+<p><a href="https://github.com/andyblueyo">Andrea Chen</a>
+<a href="https://github.com/jradavenport">Jim Davenport</a>
+<a href="https://github.com/adleorocks">Suzanne Hawley</a>
+<a href="https://github.com/jlurie">John Lurie</a>
+<a href="https://github.com/mpuighol">Michael Puig</a>
+<a href="https://github.com/kolbylyn">Kolby Weisenburger</a></p>
         </section>
 
         <aside id="sidebar">
