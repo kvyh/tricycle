@@ -1,7 +1,10 @@
 import numpy as np
 
 from lightcurve import LightCurve
-
+import data
+import binaries
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class ModelBinary(LightCurve):
     """
@@ -70,3 +73,37 @@ class ModelBinary(LightCurve):
         flux = 1 + f_e + f_1 + f_2 + noise
 
         return time, flux, noise
+
+class RealBinary(LightCurve):
+    """ 
+    It's an eclipsing binary from Kepler's data
+    """
+    def __init__(self,kic):
+        #This calls the data file
+        catfile='villanova-db.csv'
+        df = pd.read_csv(catfile)
+    
+        #Calls the row and stores it into a new data file that only has the row's information
+        dfnew = df[df['KIC']==kic]
+        #We need dfnew to be greater than zero
+        #Calls each individual componet from the row
+        if len(dfnew) ==0:
+            print "no"
+            break
+        else:
+            print 'yasss'
+        
+        kicval=dfnew.KIC.values[0]
+        KOI=dfnew.KOI.values[0]
+        mult=dfnew.Mult.values[0]
+        period=dfnew.period.values[0]
+        swidth=dfnew.swidth.values[0]
+        bjd0= dfnew.bjd0.values[0]
+        pwidth=dfnew.pwidth.values[0]
+        pdepth=dfnew.pdepth.values[0]
+        sdepth=dfnew.sdepth.values[0]
+        sep=dfnew.sep.values[0]
+        time, flux, fluxerr, cadence, quarter, quality = data.loadlc_db(kic)
+        super(RealBinary, self).__init__(time, flux, fluxerr, period, bjd0, pdepth,
+                                    sdepth, pwidth, swidth, sep)
+        
