@@ -89,7 +89,6 @@ class RealBinary(LightCurve):
         #Calls each individual componet from the row
         if len(dfnew) ==0:
             print "no"
-            break
         else:
             print 'yasss'
         
