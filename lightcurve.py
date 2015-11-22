@@ -82,8 +82,14 @@ class LightCurve(object):
         
         return:
             timecut and fluxcut"""
-        phase=((self.time- self.t_0) % self.p_orb) / self.p_orb
+        # Convert BJD to Kepler date
+        t_0 = self.t_0 - 54833
+
+        phase=((self.time- t_0) % self.p_orb) / self.p_orb
         mask= ((phase > self.p_width) & (phase < 1- self.p_width)) & ((phase > self.sep+ self.s_width) | (phase < self.sep- self.s_width))
+
         timecut= self.time[mask]
         fluxcut= self.flux[mask]
-        return timecut, fluxcut
+        errcut = self.err[mask]
+
+        return timecut, fluxcut, errcut
