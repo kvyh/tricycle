@@ -39,7 +39,7 @@ class ModelBinary(LightCurve):
                                         sig, sc)
 
         super(ModelBinary, self).__init__(time, flux, err, p_orb, t_0, p_depth,
-                                          s_depth, p_width, s_width)
+                                          s_depth, p_width, s_width, -999)
 
     # TODO: Light curve model should account for both primary and secondary
     # eclipse properties.
@@ -103,6 +103,7 @@ class RealBinary(LightCurve):
         sdepth=dfnew.sdepth.values[0]
         sep=dfnew.sep.values[0]
         time, flux, fluxerr, cadence, quarter, quality = data.loadlc_db(kic)
-        super(RealBinary, self).__init__(time, flux, fluxerr, period, bjd0, pdepth,
-                                    sdepth, pwidth, swidth, sep)
+        super(RealBinary, self).__init__(time, flux, fluxerr, period, bjd0,
+                                         pdepth, sdepth, pwidth, swidth, sep,
+                                         kic)
         

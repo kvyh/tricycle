@@ -29,10 +29,12 @@ class LightCurve(object):
         Width of secondary eclipse in phase.
     sep : float
         Seperation between the primary eclipse in secondary eclipse in phase
+    kic : int
+        Kepler Input Catalog (KIC) ID number.
 
     """
     def __init__(self, time, flux, err, p_orb, t_0, p_depth, s_depth, p_width,
-                 s_width, sep):
+                 s_width, sep, kic):
 
         self.time = time
         self.flux = flux
@@ -44,6 +46,7 @@ class LightCurve(object):
         self.p_width = p_width
         self.s_width = s_width
         self.sep = sep
+        self.kic = kic
 
     def get_period(self, units='days'):
         """
@@ -148,6 +151,9 @@ class LightCurve(object):
         if p_fold is not None:
             for factor in factors:
                 ax2.axvline(p_fold / factor, color='b')
+
+        fig1.suptitle('KIC {0:d} --- p_orb = {1:3.5f} days'.
+                      format(self.kic, self.p_orb))
 
         if p_fold is not None:
             fig2, ax3 = plt.subplots()
