@@ -1,5 +1,6 @@
 from gatspy.periodic import LombScargleFast
 import matplotlib.pyplot as plt
+import numpy as np
 
 class LightCurve(object):
     """
@@ -33,12 +34,13 @@ class LightCurve(object):
         Kepler Input Catalog (KIC) ID number.
 
     """
-    def __init__(self, time, flux, err, p_orb, t_0, p_depth, s_depth, p_width,
-                 s_width, sep, kic):
+    def __init__(self, time, flux, err, quarter, p_orb, t_0, p_depth, s_depth,
++                 p_width, s_width, sep, kic):
 
         self.time = time
         self.flux = flux
         self.err = err
+        self.quarter = quarter
         self.p_orb = p_orb
         self.t_0 = t_0
         self.p_depth = p_depth
@@ -100,8 +102,9 @@ class LightCurve(object):
         timecut= self.time[mask]
         fluxcut= self.flux[mask]
         errcut = self.err[mask]
+        quartercut = self.quarter[mask]
 
-        return timecut, fluxcut, errcut
+        return timecut, fluxcut, errcut, quartercut
 
     def periodogram(self, time, flux, err, p_fold=None, plt_color='k',
                     max_days=100.0, oversampling=5, plot=False, cut_eclipses=True, best_period = True, period_range = (.05,45)):
