@@ -92,9 +92,11 @@ class LightCurve(object):
         t_0 = self.t_0 - 54833
 
         phase=((self.time- t_0) % self.p_orb) / self.p_orb
-        mask= ((phase > self.p_width / 2.) & (phase < 1 - self.p_width / 2.)) & \
-              ((phase > self.sep + self.s_width / 2.) | (phase < self.sep - self.s_width / 2.))
-
+        mask= ((phase > self.p_width / 2.) &
+               (phase < 1 - self.p_width / 2.)) & \
+              ((phase > self.sep + self.s_width / 2.) |
+               (phase < self.sep - self.s_width / 2.))
+               
         timecut= self.time[mask]
         fluxcut= self.flux[mask]
         errcut = self.err[mask]
