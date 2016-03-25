@@ -2,7 +2,6 @@ import binaries
 import numpy as np
 import matplotlib.pyplot as plt
 import data
-import file_merge as fm
 from interpacf import interpolated_acf, dominant_period
 from scipy.ndimage import gaussian_filter
 from scipy import signal
@@ -230,6 +229,36 @@ class Periodicity:
         plt.xlim(xlim)
         plt.show()
         
+    def file_merge(self, files, newfile):
+        '''
+        This takes multiple files with the format kic best_period strength orbital_period and merges them
+        '''
+        kic = []
+        best_period = []
+        strength = []
+        p_orb = []
+        for n in files:
+            f = open(n)
+            lines = f.read().split('\n')
+            lines.pop()
+    
+            for i,line in enumerate(lines):
+                lines[i]=line.split(' ')
+            f.close()  
+    
+            for t in range(len(lines)):
+                kic.append(lines[t][0])
+                best_period.append(float(lines[t][1]))
+                strength.append(float(lines[t][2]))
+                p_orb.append(float(lines[t][3]))
+    
+                
+        array = np.array([[kic[0], best_period[0], strength[0], p_orb[0]]])
+        
+        for n in range(1,len(kic)):
+            array = np.append(array,[[kic[n], best_period[n], strength[n], p_orb[n]]],axis=0)
+        np.savetxt(newfile, array, fmt ='%.18s')
+    
     def make_period_files(self):
         '''
         Creates files containing all of the EBs for the autocorrelation and Lomb-Scargle functions 
@@ -245,11 +274,11 @@ class Periodicity:
         for x in range(0, length):
             files.append('periods_autocor_'+str(x))
         files.append('periods_autocor_last')
-        fm.file_merge(files, 'autocor_all')
+        self.file_merge(files, 'autocor_all')
 
         files = []
         for x in range(0,length):
             files.append('periods_periodogram_'+str(x))
         files.append('periods_periodogram_last')
-        fm.file_merge(files, 'periodogram_all')
+        self.file_merge(files, 'periodogram_all')
         return None
