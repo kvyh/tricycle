@@ -9,7 +9,9 @@ import pandas as pd
 class ModelBinary(LightCurve):
     """
     Model eclipsing binary light curve.
+
     See parent LightCurve class documentation of shared parameters.
+
     Parameters
     ----------
     p_rot : float
@@ -26,6 +28,7 @@ class ModelBinary(LightCurve):
         Standard deviation of errors, in relative flux units.
     sc : bool
         Default is for short cadence. Set to False for long cadence.
+
     """
     def __init__(self, p_orb=7.07, t_0=0.0, p_depth=0.23, s_depth=0.17,
                  p_width=0.02, s_width=0.02, p_rot=1.51, s_rot=0.80,
@@ -35,9 +38,8 @@ class ModelBinary(LightCurve):
                                         p_rot, s_rot, p_amp, s_amp, length,
                                         sig, sc)
 
-        super(ModelBinary, self).__init__(time, flux, err, None, p_orb, t_0,
-                                          p_depth, s_depth, p_width, s_width,
-                                          -999)
+        super(ModelBinary, self).__init__(time, flux, err, p_orb, t_0, p_depth,
+                                          s_depth, p_width, s_width, -999)
 
     # TODO: Light curve model should account for both primary and secondary
     # eclipse properties.
@@ -46,6 +48,7 @@ class ModelBinary(LightCurve):
                  length, sig, sc):
         """
         Make a light curve.
+
         """
         # One minute exposure time for short cadence, 30 minute for long.
         if sc:
@@ -83,11 +86,11 @@ class RealBinary(LightCurve):
         #Calls the row and stores it into a new data file that only has the row's information
         dfnew = df[df['KIC']==kic]
         #We need dfnew to be greater than zero
-        #Calls each individual component from the row
+        #Calls each individual componet from the row
         if len(dfnew) ==0:
             print "no"
-        #else:
-        #    print 'yasss'
+        else:
+            print 'yasss'
         
         kicval=dfnew.KIC.values[0]
         KOI=dfnew.KOI.values[0]
@@ -100,7 +103,7 @@ class RealBinary(LightCurve):
         sdepth=dfnew.sdepth.values[0]
         sep=dfnew.sep.values[0]
         time, flux, fluxerr, cadence, quarter, quality = data.loadlc_db(kic)
-        super(RealBinary, self).__init__(time, flux, fluxerr, quarter, period,
-                                         bjd0, pdepth, sdepth, pwidth, swidth,
-                                         sep, kic)
+        super(RealBinary, self).__init__(time, flux, fluxerr, period, bjd0,
+                                         pdepth, sdepth, pwidth, swidth, sep,
+                                         kic)
         

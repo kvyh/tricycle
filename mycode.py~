@@ -1,0 +1,105 @@
+## eventually should be changed to be object-oriented
+import numpy as np
+import data
+import binaries
+import matplotlib.pyplot as plt
+import lightcurve
+import pandas
+
+#def autocorrelate():
+    
+
+def period_power_dict(allkics, write = False, append = ''):
+    period_power = {}
+    best_periods = {}
+    for n,kic in enumerate(allkics):
+        binary=binaries.RealBinary(kic)
+
+        period, power, best_period = binary.periodogram()
+        period_power['kic'+str(kic)] = [period, power, binary.p_orb]
+	
+        best_periods['kic'+str(kic)] = [best_period, binary.p_orb]
+	
+    #for printing
+    if write:
+        kics = []
+        best_period = []
+        p_orb = []
+        for i,k in best_periods.iteritems():
+            kics.append(i)
+            best_period.append(k[0])
+            p_orb.append(k[1])
+        array = np.array([[kics[0], best_period[0], p_orb[0]]])
+        for n in range(1,len(kics)):
+            
+            array = np.append(array,[[kics[n], best_period[n], p_orb[n]]],axis=0)
+        print array
+        np.savetxt('best_periods'+append, array, fmt ='%.18s')
+ 
+    print 'done with periodograms'
+    return period_power, best_periods
+
+
+    
+
+def strongest_periods(period_power_dict):
+    strongest_periods = {}
+    for i,k in period_power_dict.iteritems():
+        #this goes over each [period],[power]
+        period = np.array(k[0])
+        power = np.array(k[1])
+        p_orb = np.array(k[2])
+        period_mask = []
+        for j in range(len(period)):
+            if period[j]<45.0 and period[j]>.025:
+                period_mask.append(j)
+        index = np.where(power == max(power[period_mask]))
+        strongest_periods[str(i)]=(float(period[index[0]]), float(power[index[0]]), float(p_orb))
+    return strongest_periods
+
+
+#allkics = data.select_kics()
+#for n in range(len(allkics)/100):
+#    best_periods, period_power = period_power_dict(allkics[100*n:100+100*n], write = True, append = str(n))
+#best_periods, period_power = period_power_dict(allkics[2800:], write = True, append = 'last')
+
+###
+
+
+def pullfile(filename = 'best_periods_all'):
+    f = open(filename)
+    lines = f.read().split('\n')
+    lines.pop()
+
+    for i,line in enumerate(lines):
+        lines[i]=line.split(' ')
+    f.close()  
+
+    kic = []
+    best_period = []
+    p_orb = []
+    for t in range(len(lines)):
+        kic.append(lines[t][0])
+        best_period.append(float(lines[t][1]))
+        p_orb.append(float(lines[t][2]))
+        
+    return kic, best_period, p_orb
+
+def plot_EBs(ylim = (0,5), xlim = (0,400)):
+    kic, best_period, p_orb = pullfile()
+    p_orb_rot = []
+    min_ratio = []
+    for i in range(len(kic)):
+        min_ratio.append(p_orb[i]/45)
+        p_orb_rot.append(p_orb[i]/best_period[i])
+
+
+    plt.plot(p_orb, p_orb_rot, linestyle = 'none', marker='o', markersize=4)
+    plt.plot(p_orb, min_ratio)
+    plt.ylim(ylim)
+    plt.xlim(xlim)
+    plt.ylabel('orbital period/rotational period')
+    plt.xlabel('orbital period')
+    plt.show()
+
+plot_EBs(ylim = (0,5),xlim = (0,80))

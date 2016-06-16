@@ -1,0 +1,16 @@
+import data
+import binaries
+import matplotlib.pyplot as plt
+
+allkics = data.select_kics()
+#print allkics
+
+for n,kic in enumerate(allkics[:10]):
+    binary=binaries.RealBinary(kic)
+    #print binary.flux
+    try:
+        period,power = binary.periodogram()
+	except ZeroDivisionError:
+	    pass
+
+#need to deal with exception handling

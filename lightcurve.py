@@ -5,9 +5,7 @@ import numpy as np
 class LightCurve(object):
     """
     Eclipsing binary light curve with system parameters.
-
     Parent class with analysis methods.
-
     Parameters
     ----------
     time : ndarray
@@ -32,10 +30,9 @@ class LightCurve(object):
         Seperation between the primary eclipse in secondary eclipse in phase
     kic : int
         Kepler Input Catalog (KIC) ID number.
-
     """
     def __init__(self, time, flux, err, quarter, p_orb, t_0, p_depth, s_depth,
-+                 p_width, s_width, sep, kic):
+                 p_width, s_width, sep, kic):
 
         self.time = time
         self.flux = flux
@@ -53,17 +50,14 @@ class LightCurve(object):
     def get_period(self, units='days'):
         """
         Return the orbital period.
-
         Parameters
         ----------
         units : {'days', 'hours', 'minutes'}
             Desired units for period.
-
         Returns
         -------
         period : float
             The orbital period in the specified units.
-
         """
         if units == 'days':
             period = self.p_orb
@@ -76,7 +70,7 @@ class LightCurve(object):
 
         return period
 
-    def curve_cut(self):
+    def curve_cut(self, widthfactor = 0.5):
         """This a function that takes parameters of a star and gives you the time and flux with the eclipses cut out
     
         Parameters:
@@ -91,29 +85,59 @@ class LightCurve(object):
         return:
             timecut and fluxcut"""
         # Convert BJD to Kepler date
+
         t_0 = self.t_0 - 54833
 
         phase=((self.time- t_0) % self.p_orb) / self.p_orb
-        mask= ((phase > self.p_width / 2.) &
-               (phase < 1 - self.p_width / 2.)) & \
-              ((phase > self.sep + self.s_width / 2.) |
-               (phase < self.sep - self.s_width / 2.))
-               
+
+        mask= ((phase > self.p_width * widthfactor) &
+               (phase < 1 - self.p_width * widthfactor)) & \
+              ((phase > self.sep + self.s_width * widthfactor) |
+               (phase < self.sep - self.s_width * widthfactor))
+
         timecut= self.time[mask]
         fluxcut= self.flux[mask]
         errcut = self.err[mask]
         quartercut = self.quarter[mask]
 
         return timecut, fluxcut, errcut, quartercut
+    
+    
+    def interpolate(self, widthfactor = 0.5):
+        """This a function that takes parameters of a star and gives you the time and flux with the eclipses cut out
+    
+        Parameters:
+        Time
+        Flux
+        bjdo
+        period
+        pwidth
+        swidth
+        separation
+        
+        return:
+            timecut and fluxcut"""
+        # Convert BJD to Kepler date
 
-    def periodogram(self, time, flux, err, p_fold=None, plt_color='k',
+        t_0 = self.t_0 - 54833
+
+        phase=((self.time- t_0) % self.p_orb) / self.p_orb
+
+        mask= ((phase > self.p_width * widthfactor) &
+               (phase < 1 - self.p_width * widthfactor)) & \
+              ((phase > self.sep + self.s_width * widthfactor) |
+               (phase < self.sep - self.s_width * widthfactor))
+        flux = np.copy(self.flux)    
+        flux[~mask] = np.interp(self.time[~mask], self.time[mask], self.flux[mask])
+
+        return self.time, flux, self.err, self.quarter
+    
+    def periodogram(self, p_fold=None, plt_color='k',
                     max_days=100.0, oversampling=5, plot=False, cut_eclipses=True, best_period = True, period_range = (.05,45)):
         """
         Plot a the light curve, periodogram, and phase-folded light curve.
-
         The orbital period and possible aliases are indicated in red on the
         periodogram.
-
         Parameters
         ----------
         time : array_like
@@ -132,15 +156,15 @@ class LightCurve(object):
             periodogram.
         oversampling: int, optional
             The oversampling factor for the periodogram.
-
         """
         if cut_eclipses:
-            time, flux, err = self.curve_cut()
+            time, flux, err, quarter = self.curve_cut()
             
         else:
             time=self.time
             flux=self.flux
             error=self.error
+            quarter=self.quarter
             
         model = LombScargleFast().fit(time, flux, err)
         period, power = model.periodogram_auto(oversampling=oversampling)
@@ -188,4 +212,4 @@ class LightCurve(object):
         if best_period:
             return period, power, Best_period
         else:
-            return period, power    
+            return period, power

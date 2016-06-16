@@ -1,0 +1,12 @@
+run:
+
+curve_cut with varying width
+interpolation with varying width
+
+
+code and run:
+plot a histogram of how many have what ratio.
+take a representative sample of the lightcurves and chop them up by found period,
+    (take time/period and use timee or time//period=number and mask by number=1, number=2, etc.),
+    then find a sine best fit (define the period but let amplitude and phase vary) for each chunk.
+    If the amplitude and phase change it is unlikely to be ellipsoidal variation.
