@@ -1,0 +1,21 @@
+Naming convention:
+autocor = results from interpacf's autocorrelation function
+periodogram = results from gatspy's fast Lomb-Scargle periodogram
+cut = eclipses were cut out leaving a gap in the data
+interp = eclipses were cut out and then interpolated over with linear interpolation
+# = fraction of the eclipse that is cut out (less leaves more of the actual data/ more removes 	    	more of the influence of the eclipses in the period)
+Note: the code ran into errors when run with # > 0.7; I don't know why or if it can be fixed
+
+DATA format:
+KIC#  rotation_period   stregth_of_period    orbital_period
+
+rotation_period is the strongest result of the period-finding function
+strength_of_period is the strength of that period according to the function
+orbital_period is the orbital period of the binary provided by the Kepler Eclipsing binary Catalogue
+
+
+Other:
+The lomb-scargle was run with oversampling=5, and only allowed output periods between .05 and 45 days
+The autocorrelation function was only allowed output periods between .2 and 45 days
+		(I have no idea why I had used different limits)
+
