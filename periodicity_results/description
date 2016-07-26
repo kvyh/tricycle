@@ -3,7 +3,8 @@ autocor = results from interpacf's autocorrelation function
 periodogram = results from gatspy's fast Lomb-Scargle periodogram
 cut = eclipses were cut out leaving a gap in the data
 interp = eclipses were cut out and then interpolated over with linear interpolation
-# = fraction of the eclipse that is cut out (less leaves more of the actual data/ more removes 	    	more of the influence of the eclipses in the period)
+# = fraction of the eclipse that is cut out (less leaves more of the actual data/ more removes
+                                             more of the influence of the eclipses in the period)
 Note: the code ran into errors when run with # > 0.7; I don't know why or if it can be fixed
 
 DATA format:
@@ -18,4 +19,4 @@ Other:
 The lomb-scargle was run with oversampling=5, and only allowed output periods between .05 and 45 days
 The autocorrelation function was only allowed output periods between .2 and 45 days
 		(I have no idea why I had used different limits)
-
+The autocorrelation function smooths when finding the period and this can obscure short periods
