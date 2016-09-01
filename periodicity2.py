@@ -12,41 +12,57 @@ from scipy import optimize
 #https://github.com/bmorris3/interp-acf and requires the gatspy and MySQLdb
 #packages to run properly
 
+
 class Periodicity():
     '''
-    Takes a lightcurve as input
+    Takes a lightcurve as input and contains methods
+    for analysis of the lightcurve
     '''
     def __init__(self, time, flux, fluxerr):
+        """
+
+        Parameters
+        ----------
+        time : array of times
+            The times at which the data were taken
+        flux : array of fluxes
+            The data associated with the times
+        fluxerr : array of flux errors
+            The errors in the data
+        """
         self.time = time
         self.flux = flux
         self.err = fluxerr
         self.autocor_results = []
         self.periodogram_results = []
-        
-        
-    def autocorrelate(self):
+
+    def autocorrelate(self, min_days=0.2, max_days=45.0):
         '''
-        
+        This takes the ``lightcurve`` and runs it through interp-acf's
+        autocorrelation function to find the most probable period
+        within the bounds of ``min_days`` and ``max_days``
         '''
         flux = self.flux
         time = self.time
         err = self.err        
-        #as given in the interpacf code.
+        # as described in the interpacf code:
         flux -= np.mean(self.flux)
         lag, acf = interpolated_acf(time, flux)
         detected_period = -0.1
         strength = -1.0
         try:
-            detected_period, strength = dominant_period(lag, acf, min=0.2, max=45.0)
+            detected_period, strength = dominant_period(lag, acf, min_days, max_days)
         except TypeError:
             print 'TypeError during autocorrelation'
         self.autocor_results = [detected_period, strength]
             
-    def Lomb_scargle(self, oversampling=5, period_range = (.05,45)):
+    def Lomb_scargle(self, oversampling=5, period_range=(.05, 45)):
         '''
-        
+        Uses gatspy's ``LombScargleFast`` to create a periodogram, stores
+        the period, power values in ``self.period_power_ls`` and the strongest
+        period, and its strength, in ``self.periodogram_results``.
         '''
-        #Copied from lightcurve.py from Tricycle and the gatspy documentation
+        # Copied from lightcurve.py from Tricycle and the gatspy documentation
         
         time=self.time
         flux=self.flux
@@ -61,13 +77,14 @@ class Periodicity():
         strength = power[where]
         self.periodogram_results = [detected_period, strength]
         
-    def targeted_LS(self, oversampling=5, target_range = None, kic = 'no kic given'):
-        '''target_range should be a tuple. For tricycle equal to (p_orb/.85,p_orb/.7)
+    def targeted_LS(self, oversampling=5, target_range=None, kic='no kic given'):
+        '''
+        target_range should be a tuple. For tricycle equal to (p_orb/.85,p_orb/.7)
         '''
         from scipy.signal import argrelextrema
-        time=self.time
-        flux=self.flux
-        err=self.err
+        time = self.time
+        flux = self.flux
+        err = self.err
         
         model = LombScargleFast().fit(time, flux, err)
         period, power = model.periodogram_auto(oversampling=oversampling)
@@ -84,11 +101,11 @@ class Periodicity():
     def test_period(self, testperiod, kic):
         int_time = self.time//testperiod
         phase_amp = {}
-        par=[.005,0]
-        x=0
-        for time in range(int(min(int_time))+1,int(max(int_time))):
-            if len(np.where(int_time==float(time))[0]) > 1:
-                mask = np.where(int_time==float(time))
+        par = [.005, 0]
+        x = 0
+        for time in range(int(min(int_time))+1, int(max(int_time))):
+            if len(np.where(int_time == float(time))[0]) > 1:
+                mask = np.where(int_time == float(time))
                 #if len(mask[0])>100:
                 #    print len(mask[0])
                 func = lambda par, t: par[0]*np.cos(2*np.pi/testperiod*t+par[1]%(2*np.pi))
@@ -111,8 +128,7 @@ class Periodicity():
             #    print 'optimize being stupid between',time*testperiod,',',(time+1)*testperiod
         
         return phase_amp
-            
-    
+
     def results(self):
         self.autocorrelate()
         self.Lomb_scargle()
