@@ -98,8 +98,19 @@ class Periodicity():
             #print kic + 'may have a period at: ' +str(interested)
             return interested
         
-    def test_period(self, testperiod, kic):
-        int_time = self.time//testperiod
+    def test_period(self, test_period, kic):
+        """
+        takes a period and a kic number and tries to fit the target's
+        lightcurve to a cosine function of that period. It performs this
+        fit on each ``test_period``-length interval and uses the results
+        of the previous fit as defaults.
+
+        returns
+        -------
+        an array with [phase offset, amplitude] of the fitted
+        function for each interval.
+        """
+        int_time = self.time//test_period
         phase_amp = {}
         par = [.005, 0]
         x = 0
@@ -108,19 +119,19 @@ class Periodicity():
                 mask = np.where(int_time == float(time))
                 #if len(mask[0])>100:
                 #    print len(mask[0])
-                func = lambda par, t: par[0]*np.cos(2*np.pi/testperiod*t+par[1]%(2*np.pi))
+                func = lambda par, t: par[0]*np.cos(2*np.pi/test_period*t+par[1]%(2*np.pi))
                 funcerr = lambda par, t, x: func(par,t)-x
                 P0 = par
                 P0[1]=P0[1]%(2*np.pi)
-                par,success = optimize.leastsq(funcerr,P0,args=(self.time[mask],self.flux[mask]-np.median(self.flux[mask])))
-                if par[0]>=1:
-                    phase_amp[time]=[par[1]%(2*np.pi),par[0]]
+                par, success = optimize.leastsq(funcerr,P0,args=(self.time[mask],self.flux[mask]-np.median(self.flux[mask])))
+                if par[0] >= 1:
+                    phase_amp[time] = [par[1] % (2*np.pi), par[0]]
                 else:
-                    phase_amp[time]=[(par[1]+np.pi)%(2*np.pi),-par[0]]
+                    phase_amp[time] = [(par[1]+np.pi) % (2*np.pi), -par[0]]
                 if x == 1 or 20 or 50:
                     time = np.linspace(self.time[mask].min(), self.time[mask].max(), 100)
-                    plt.plot(self.time[mask],self.flux[mask]-1., linestyle = 'None', marker = 'o')
-                    plt.plot(time,func(par,time))
+                    plt.plot(self.time[mask], self.flux[mask] - 1., linestyle='None', marker='o')
+                    plt.plot(time, func(par, time))
                     plt.title(kic)
                     plt.show()
                 x+=1

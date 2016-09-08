@@ -9,54 +9,80 @@ from scipy import signal
 #https://github.com/bmorris3/interp-acf and requires the gatspy and MySQLdb
 #packages to run properly
 
+
 class kic_analyze():
+
     def __init__(self, kic_list):
-        '''
-        
-        '''
+        """
+        Parameters
+        ----------
+        kic_list : list of numbers
+            list of kic numbers for the objects that will be analyzed
+        """
         self.kics = kic_list
         self.autocor_results = {}
         self.periodogram_results = {}
         self.interpolate = True
         self.eclipsewidth = .7
     
-    def plot_periodogram(self, kic, l_s = True, autocor = False):
+    def plot_periodogram(self, kic, l_s=True, autocor=False):
         '''
-        
+        plots the periodogram of the object with kic number ``kic``
         '''
         time, flux, fluxerr, p_orb = self.get_info(kic)
         periods = periodicity2.Periodicity(time, flux, fluxerr)
         periods.Lomb_scargle()
         period = periods.period_power_ls[0]
         power = periods.period_power_ls[1]
-        plt.plot(period,power,label='periodogram')
-        plt.axvline(x=p_orb,label='orbital period',color = 'k')
+        plt.plot(period, power, label='periodogram')
+        plt.axvline(x=p_orb, label='orbital period', color='k')
         period_list = self.potential_targets[kic]
-        plt.axhline(xmin = min(period_list),xmax = max(period_list),y=.5,label='target',color = 'g')
-        plt.xlim(0,45)
+        plt.axhline(xmin=min(period_list), xmax=max(period_list), y=.5, label='target', color='g')
+        plt.xlim(0, 45)
         plt.legend()
         plt.show()
-        pass
-        
-    
+
     def get_info(self, kic):
-        '''
-        
-        '''
+        """
+        Parameters
+        ----------
+        kic : int
+            kic number of the target
+
+        Returns
+        -------
+        time array, flux array, error array, orbital period for the target
+        with the eclipses cut out (and interpolated over if self.interpolate)
+        """
         curve = binaries.RealBinary(kic)
         time, flux, fluxerr, cadence, quarter, quality = data.loadlc_db(kic)
         if self.interpolate:
-            time_cut, flux_cut, err_cut, quarter_cut = curve.interpolate(widthfactor = self.eclipsewidth)
+            time_cut, flux_cut, err_cut, quarter_cut = curve.interpolate(widthfactor=self.eclipsewidth)
         else:
-            time_cut, flux_cut, err_cut, quarter_cut = curve.curve_cut(widthfactor = self.eclipsewidth)
+            time_cut, flux_cut, err_cut, quarter_cut = curve.curve_cut(widthfactor=self.eclipsewidth)
         return time_cut, flux_cut, err_cut, curve.p_orb
     
-    def rotation_periods(self, interpolate = True, eclipsewidth = .7):
-        '''
-        
-        '''
+    def rotation_periods(self, interpolate=True, eclipse_width=.7):
+        """
+        runs both the autocorrelation function and periodogram on each
+        target in ``self.kics`` and records the results in ``self.autocor_results``
+        and ``self.periodogram_results``
+        Parameters
+        ----------
+        interpolate : bool
+            if the eclipses should be cut, or cut and interpolated over
+        eclipse_width : float in (0,1)
+            how much of the eclipse should be cut (high values can cause errors
+            in the functions if there are targets whose lightcurve consists almost
+            entirely of eclipses (e.g. very short period binaries))
+
+        Returns
+        -------
+        periodogram dictionary, autocorrelation dictionary
+        of the form {kic#: [rotation period, strength, orbital period]}
+        """
         self.interpolate = interpolate
-        self.eclipsewidth = eclipsewidth
+        self.eclipsewidth = eclipse_width
         self.periodogram_results = {}
         self.autocor_results = {}
         for kic in self.kics:
@@ -84,7 +110,7 @@ class kic_analyze():
     
     def lightcurve(self, kic):
         '''
-        
+        plots the lightcurve with and without eclipses on the same graph
         '''
         curve = binaries.RealBinary(kic)
         self.interpolate = True
@@ -92,16 +118,21 @@ class kic_analyze():
         time_cut, flux_cut, err_cut, p_orb = self.get_info(kic)
         #plt.figure(1, figsize = (16,6))
         #plt.subplot(122)
-        plt.plot(time_cut,flux_cut,label = 'eclipses cut')
+        plt.plot(time_cut, flux_cut, label='eclipses cut')
         plt.legend()
         
         #plt.subplot(121)
-        plt.plot(time,flux, label = 'with eclipses')
+        plt.plot(time, flux, label='with eclipses')
         plt.legend()
         plt.show()
             
     def readfile(self, filename):
-        kic, period, strength, p_orb = np.genfromtxt(filename, unpack = True)
+        """
+        reads in a file of the same type that the ``self.write`` method creates
+        and stores it in the appropriate ``self.autocor_results`` or
+        ``self.periodogram_results``
+        """
+        kic, period, strength, p_orb = np.genfromtxt(filename, unpack=True)
 
         tempdict = {}
         for x in range(len(kic)):
@@ -113,10 +144,12 @@ class kic_analyze():
             self.periodogram_results = tempdict
         return tempdict
     
-    def better_periods(self, files = None):
-        '''
-        uses the data contained in files or output by self.rotation_periods
-        '''
+    def better_periods(self, files=None):
+        """
+        uses the data contained in files or the output of self.rotation_periods
+        and compares the results from the autocorrelation and the periodogram,
+        returning only targets where they match
+        """
         if not files == None:
             for filename in files:
                 self.readfile(filename)
@@ -125,17 +158,20 @@ class kic_analyze():
         self.better_periods = {}
         for kic in self.autocor_results.iterkeys():
             auto = self.autocor_results[kic]
-            perio = self.periodogram_results[kic]
+            p_gram = self.periodogram_results[kic]
             ratio = self.autocor_results[kic][0]/self.periodogram_results[kic][0]
-            for scalar in [.2,.25,.33,.5,1,2,3,4,5]:
-                if .98<auto[0]*scalar/perio[0] and auto[0]*scalar/perio[0]<1.02:
-                    self.better_periods[kic] = [min(auto[0],perio[0]),auto[1],auto[2]]
+            # check if they are the same, or either one registered a harmonic
+            for scalar in [.2, .25, .33, .5, 1, 2, 3, 4, 5]:
+                if .98 < ratio*scalar < 1.02:
+                    self.better_periods[kic] = [min(auto[0], p_gram[0]), auto[1], auto[2]]
                     #using the minimum will remove higher harmonics, but may show lower harmonics
         return self.better_periods
                 
     def test_data(self):
         '''
-        uses better_periods
+        uses better_periods to restrict targets to those where we are confident
+        in the found period, then prints the deviation in the phases found by
+        test_period in periodicity2
         '''
         one=[]
         point8=[]
@@ -155,9 +191,16 @@ class kic_analyze():
             print np.std([x[0] for x in phase_amp.itervalues()])
         
     def histogram(self, dictionary_array):
-        '''
-        
-        '''
+        """
+        plots a histogram with bins based on the
+        orbit period/rotation period ratio of targets
+
+        Parameters
+        ----------
+        dictionary_array : array of dictionaries
+            array of dictionaries with values of
+            [rotation period, strength, orbit period]
+        """
         #if len(self.autocor_results) < 1:
         #    self.find_periods()
         it = np.nditer(dictionary_array, flags=['refs_ok','external_loop'], order='F')
@@ -173,29 +216,61 @@ class kic_analyze():
         plt.show()
         
     def histogram2D(self, dictionary_array):
-        '''
-        needs work on array size
-        '''
+        """
+        plots a histogram with bins based on the
+        orbit period/rotation period ratio of targets
+
+        Parameters
+        ----------
+        dictionary_array : array of dicts
+            array of dictionaries with values of
+            [rotation period, strength, orbit period]
+        """
         #if len(self.autocor_results) < 1:
         #    self.find_periods()
         it = np.nditer(dictionary_array, flags=['refs_ok','external_loop'], order='F')
         plt.figure(figsize = (16,10))
         n = 0
-        colors = ['r','c','g','m','b','k']
         for dictionary, name in it:
             ratio = [x[2]/x[0] for x in dictionary.itervalues()]
             p_orb =[x[2] for x in dictionary.itervalues()]           
             plt.subplot(2,2,n+1)
             plt.title(str(name))
+            # uses cmax to prevent the high-density bins around ratio==1 from
+            # skewing the color scale (if they are left in, bins with 3 objects
+            # have the same color as those with 10 objects)
             plt.hist2d(p_orb,ratio, range=[[0,15],[0,2.5]], bins = [80,100], cmax = 10)
             n+=1
         plt.legend()
         plt.show()            
     
-    def plot_results(self, dictionary = None, autocorrelation = True, xlim = (0,200), ylim = (0,10) ,minstrength = 0, maxstrength = 1):
-        '''
-        
-        '''
+    def plot_results(self, dictionary=None, autocorrelation=True, xlim=(0, 200),
+                     ylim=(0, 10), minstrength=0, maxstrength=1):
+        """
+
+        Parameters
+        ----------
+        dictionary : dict
+            dictionary of form {kic#: [rotation period, strength, orbital period]}
+        autocorrelation : bool
+            if True, uses ``self.autocorrelation_results``, if false
+            uses ``self.periodogram_results``
+        xlim : tuple
+            x limits for the plot
+        ylim : tuple
+            y limits for the plot
+        minstrength : float in (0,1)
+            lower bound on allowed strength (strength is the value returned by
+            the period-finding function that describes the likelyhood of the period)
+            note: this is not a confidence percent
+        maxstrength : float in (0,1)
+            upper bound on allowed strength (strength is the value returned by
+            the period-finding function that describes the likelyhood of the period)
+            note: this is not a confidence percent
+        Returns
+        -------
+        scatterplot of the (orbit period, ratio) of each object
+        """
         if len(self.autocor_results) == 1:
             self.find_periods()
         if dictionary == None:
@@ -234,9 +309,19 @@ class kic_analyze():
         plt.show()
     
     def write(self, data, base, append):
-        '''
-        
-        '''
+        """
+        creates a text file with the information stored in ``data`` that
+        has a filename of ``base``_periods_all``append``
+
+        Parameters
+        ----------
+        data : dict
+            dictionary of style {kic#: [rotation period, strength, orbital period]}
+        base : string
+            start of the filename
+        append : string
+            end of the filename
+        """
         kics = [x for x in data.iterkeys()]
         best_period = [x[0] for x in data.itervalues()]
         strength = [x[1] for x in data.itervalues()]
@@ -249,9 +334,16 @@ class kic_analyze():
         np.savetxt(base+'_periods_all'+append, array, fmt ='%.18s')
     
     def write_results(self, append):
-        '''
-        
-        '''
+        """
+        writes self.autocor_results and self.periodogram_results
+        to files that are named autocor_periods_all``append`` and
+        periodogram_periods_all``append``
+
+        Parameters
+        ----------
+        append : string
+            ending for the filename
+        """
         if len(self.autocor_results) > 0:
             pass
         else:
@@ -262,19 +354,25 @@ class kic_analyze():
 
     def results(self):    
         '''
-        
+        prints the contents of self.autocor_results and
+        self.periodogram_results
         '''
         print 'autocorrelation results:', self.autocor_results
         print 'periodogram results:', self.periodogram_results
 
         
 def main():
+    # this was written to create files with the results of the
+    # periodogram and autocorrelation with and without interpolation
+    # over the removed eclipses. It failed while running 0.75, likely
+    # due to having too much of the lightcurve removed when the eclipses
+    # were removed
     allkics = data.select_kics()
     ka = kic_analyze(allkics[:])
-    for x in [.75,.8,.9,1]:
-        ka.rotation_periods(interpolate = True, eclipsewidth = x)
+    for x in [0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8]:
+        ka.rotation_periods(interpolate = True, eclipse_width= x)
         ka.write_results('_interp_'+str(x))
-        ka.rotation_periods(interpolate = False, eclipsewidth = x)
+        ka.rotation_periods(interpolate = False, eclipse_width= x)
         ka.write_results('_cut_'+str(x))
     
     #ka.readfile()
