@@ -138,10 +138,15 @@ class kic_analyze():
         for x in range(len(kic)):
             tempdict[int(kic[x])] = [period[x], strength[x], p_orb[x]]
         
-        if filename[0] == 'a':
+        if 'autocor' in filename:
             self.autocor_results = tempdict
-        else:
+            print 'autocor read'
+        elif 'periodo' in filename:
             self.periodogram_results = tempdict
+            print 'periodogram read'
+        elif 'better' in filename:
+            self.better_period = tempdict
+            print 'better read'
         return tempdict
     
     def better_periods(self, files=None):
@@ -155,7 +160,7 @@ class kic_analyze():
                 self.readfile(filename)
         if len(self.autocor_results)<1 or len(self.periodogram_results)<1:
             print 'period files are needed'
-        self.better_periods = {}
+        self.better_period = {}
         for kic in self.autocor_results.iterkeys():
             auto = self.autocor_results[kic]
             p_gram = self.periodogram_results[kic]
@@ -163,9 +168,9 @@ class kic_analyze():
             # check if they are the same, or either one registered a harmonic
             for scalar in [.2, .25, .33, .5, 1, 2, 3, 4, 5]:
                 if .98 < ratio*scalar < 1.02:
-                    self.better_periods[kic] = [min(auto[0], p_gram[0]), auto[1], auto[2]]
+                    self.better_period[kic] = [min(auto[0], p_gram[0]), auto[1], auto[2]]
                     #using the minimum will remove higher harmonics, but may show lower harmonics
-        return self.better_periods
+        return self.better_period
                 
     def test_data(self):
         '''
@@ -176,7 +181,7 @@ class kic_analyze():
         one=[]
         point8=[]
         others=[]
-        for kic,k in self.better_periods.iteritems():
+        for kic,k in self.better_period.iteritems():
             if .99 < k[2]/k[0] and 1.01>k[2]/k[0]:
                 one.append(kic)
             elif .7 < k[2]/k[0] and .85 > k[2]/k[0]:
@@ -187,7 +192,7 @@ class kic_analyze():
         for kic in testkics:
             time, flux, fluxerr, p_orb = self.get_info(kic)
             periods = periodicity2.Periodicity(time, flux, fluxerr)
-            phase_amp = periods.test_period(self.better_periods[kic][0],'kic')
+            phase_amp = periods.test_period(self.better_period[kic][0],'kic')
             print np.std([x[0] for x in phase_amp.itervalues()])
         
     def histogram(self, dictionary_array):
@@ -298,7 +303,7 @@ class kic_analyze():
         p_orb = p_orb[mask]
         strength = strength[mask]
         
-        print len(p_orb_rot)
+        print '# of points: ' + str(len(p_orb_rot))
         
         plt.plot(p_orb, p_orb_rot, linestyle = 'none', marker='o', markersize=1)
         plt.title('Eclipsing binaries with strength between ' + str(minstrength) + ' and ' + str(maxstrength)) 
