@@ -76,6 +76,18 @@ class Periodicity():
         where = np.abs(period - detected_period).argmin()
         strength = power[where]
         self.periodogram_results = [detected_period, strength]
+
+    def multi_period_l_s(self, oversampling=5, period_range=(.05, 45)):
+        time = self.time
+        flux = self.flux
+        err = self.err
+        model = LombScargleFast().fit(time, flux, err)
+        period, power = model.periodogram_auto(oversampling=oversampling)
+        self.period_power_ls = [period, power]
+        model.optimizer.period_range = period_range
+        model.optimizer.quiet = True
+        periods, scores = model.optimizer.find_best_periods(return_scores=True)
+        self.periodogram_results = [[periods[i], scores[i]] for i in range(len(periods))]
         
     def targeted_LS(self, oversampling=5, target_range=None, kic='no kic given'):
         '''

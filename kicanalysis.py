@@ -94,7 +94,33 @@ class kic_analyze():
             self.periodogram_results[kic] = periodogram_result
             self.autocor_results[kic] = autocor_result
         return self.periodogram_results, self.autocor_results
-    
+
+    def l_s_multi_period(self, interpolate=True, eclipse_width=.7):
+        """
+        as above, but finds multiple periods in the periodogram
+
+        Returns
+        -------
+        peirodogram dictionary of the form {kic#: [rot period, strength,
+        rot period, strength, rot period, strength, rot period, strength,
+        rot period, strength, orbital period
+        """
+        self.interpolate = interpolate
+        self.eclipsewidth = eclipse_width
+        self.periodogram_multi_results = {}
+        for kic in self.kics:
+            time, flux, fluxerr, p_orb = self.get_info(kic)
+            periods = periodicity2.Periodicity(time, flux, fluxerr)
+            periods.multi_period_l_s()
+            periodogram_results = periods.periodogram_results
+            results = []
+            for result in periodogram_results:
+                results.append(result[0])
+                results.append(result[1])
+                results.append(p_orb)
+            self.periodogram_multi_results[kic] = results
+        return self.periodogram_multi_results
+
     def list_potentials(self):
         #work in progress
         self.interpolate = True
@@ -311,7 +337,7 @@ class kic_analyze():
         plt.xlabel('orbital period')
         plt.ylim(ylim)
         plt.xlim(xlim)
-        plt.show()
+        #plt.show()
     
     def write(self, data, base, append):
         """
@@ -327,17 +353,28 @@ class kic_analyze():
         append : string
             end of the filename
         """
+
+
         kics = [x for x in data.iterkeys()]
-        best_period = [x[0] for x in data.itervalues()]
-        strength = [x[1] for x in data.itervalues()]
-        p_orb = [x[2] for x in data.itervalues()]
-        
-        array = np.array([[kics[0], best_period[0], strength[0], p_orb[0]]])
-               
-        for n in range(1,len(kics)):
-            array = np.append(array,[[kics[n], best_period[n], strength[n], p_orb[n]]],axis=0)
-        np.savetxt(base+'_periods_all'+append, array, fmt ='%.18s')
-    
+        if len(data[kics[0]]) == 3:
+            best_period = [x[0] for x in data.itervalues()]
+            strength = [x[1] for x in data.itervalues()]
+            p_orb = [x[2] for x in data.itervalues()]
+
+            array = np.array([[kics[0], best_period[0], strength[0], p_orb[0]]])
+
+            for n in range(1,len(kics)):
+                array = np.append(array,[[kics[n], best_period[n], strength[n], p_orb[n]]],axis=0)
+            np.savetxt(base+'_periods_all'+append, array, fmt ='%.18s')
+
+        else:
+            x = np.zeros((len(data[kics[0]])+1,len(kics)))
+            x[0] = kics
+            for n in range(len(data[kics[0]])):
+                x[n+1] = [a[n] for a in data.itervalues()]
+            array = x.T
+            np.savetxt(base+'_periods_all'+append, array, fmt = '%.18s')
+
     def write_results(self, append):
         """
         writes self.autocor_results and self.periodogram_results
@@ -376,9 +413,9 @@ def main():
     ka = kic_analyze(allkics[:])
     for x in [0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8]:
         ka.rotation_periods(interpolate = True, eclipse_width= x)
-        ka.write_results('_interp_'+str(x))
+        ka.write_results('_interp_2_'+str(x))
         ka.rotation_periods(interpolate = False, eclipse_width= x)
-        ka.write_results('_cut_'+str(x))
+        ka.write_results('_cut_2_'+str(x))
     
     #ka.readfile()
     #ka.find_periods()
