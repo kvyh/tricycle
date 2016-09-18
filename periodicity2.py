@@ -86,7 +86,7 @@ class Periodicity():
         self.period_power_ls = [period, power]
         model.optimizer.period_range = period_range
         model.optimizer.quiet = True
-        periods, scores = model.optimizer.find_best_periods(return_scores=True)
+        periods, scores = model.optimizer.find_best_periods(model, return_scores=True)
         self.periodogram_results = [[periods[i], scores[i]] for i in range(len(periods))]
         
     def targeted_LS(self, oversampling=5, target_range=None, kic='no kic given'):

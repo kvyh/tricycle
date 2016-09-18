@@ -392,7 +392,6 @@ class kic_analyze():
             self.find_periods()
         self.write(self.autocor_results, 'autocor', append)
         self.write(self.periodogram_results, 'periodogram', append)
-        
 
     def results(self):    
         '''
@@ -401,6 +400,7 @@ class kic_analyze():
         '''
         print 'autocorrelation results:', self.autocor_results
         print 'periodogram results:', self.periodogram_results
+        return self.autocor_results, self.periodogram_results
 
         
 def main():
