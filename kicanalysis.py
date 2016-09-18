@@ -117,9 +117,23 @@ class kic_analyze():
             for result in periodogram_results:
                 results.append(result[0])
                 results.append(result[1])
-                results.append(p_orb)
+            results.append(p_orb)
             self.periodogram_multi_results[kic] = results
         return self.periodogram_multi_results
+
+    def read_multi_period(self, filename):
+        """
+        reads a file containing multiple strong periods per object
+        """
+        array = np.genfromtxt(filename)
+        tempdict = {}
+        for line in array.T:
+            tempdict[line[0]] = [[line[1], line[2]], [line[3], line[4]],
+                                 [line[5], line[6]], [line[7], line[8]],
+                                 [line[9], line[10]], line[11]]
+        self.periodogram_multi_results = tempdict
+        return tempdict
+
 
     def list_potentials(self):
         #work in progress
