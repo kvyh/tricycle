@@ -20,6 +20,7 @@ for kic, values in potential_periods.iteritems():
 value_array = array.T
 kic = value_array[0]
 strengths = value_array[2]
-mask = np.where(strengths > 0.9)
+mask = np.where((strengths > 0.9))
+print kic[mask]
 for No in kic[mask]:
     ka.plot_periodogram(No)

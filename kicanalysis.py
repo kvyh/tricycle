@@ -36,8 +36,9 @@ class kic_analyze():
         power = periods.period_power_ls[1]
         plt.plot(period, power, label='periodogram')
         plt.axvline(x=p_orb, label='orbital period', color='k')
-        period_list = self.potential_targets[kic]
-        plt.axhline(xmin=min(period_list), xmax=max(period_list), y=.5, label='target', color='g')
+        #period_list = self.potential_targets[kic]
+        #plt.axhline(xmin=min(period_list), xmax=max(period_list), y=.5, label='target', color='g')
+        plt.title(str(kic))
         plt.xlim(0, 45)
         plt.legend()
         plt.show()
@@ -164,7 +165,8 @@ class kic_analyze():
         #plt.subplot(121)
         plt.plot(time, flux, label='with eclipses')
         plt.legend()
-        plt.show()
+        plt.title(str(kic))
+        #plt.show()
             
     def readfile(self, filename):
         """
