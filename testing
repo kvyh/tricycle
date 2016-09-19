@@ -12,3 +12,6 @@ take a representative sample of the lightcurves and chop them up by found period
     If the amplitude and phase change it is unlikely to be ellipsoidal variation.
 
 search for peaks in periodogram around .8/
+
+
+false-alarm probability: each periodogram looks at 1990/2000 frequencies?  
