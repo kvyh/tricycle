@@ -23,7 +23,10 @@ periods = value_array[1]
 strengths = value_array[2]
 p_orb = value_array[3]
 p_orb_rot = p_orb/periods
-print max(strengths)
+#create a mask for the objects with ratio between .6 and .95
+mask = np.where((.6 < p_orb_rot) & (p_orb_rot < .95) & (strengths > .00006))
+kic_set = set(kic[mask])
+print(kic_set)
 plt.figure(figsize=(24, 10))
 
 orb_rot_by_strength = p_orb_rot
