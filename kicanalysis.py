@@ -197,6 +197,8 @@ class kic_analyze():
         and compares the results from the autocorrelation and the periodogram,
         returning only targets where they match
         """
+        # this function is very aggressive at bringing period ratios closer to 1
+        # use the results with extreme caution
         if not files == None:
             for filename in files:
                 self.readfile(filename)
@@ -208,10 +210,14 @@ class kic_analyze():
             p_gram = self.periodogram_results[kic]
             ratio = self.autocor_results[kic][0]/self.periodogram_results[kic][0]
             # check if they are the same, or either one registered a harmonic
-            for scalar in [.2, .25, .33, .5, 1, 2, 3, 4, 5]:
-                if .98 < ratio*scalar < 1.02:
-                    self.better_period[kic] = [min(auto[0], p_gram[0]), auto[1], auto[2]]
-                    #using the minimum will remove higher harmonics, but may show lower harmonics
+            for scalar in [1, 2, 3, 4, 5]:
+                for scale in [1., 2., 3., 4., 5.]:
+                    if .98 < ratio*scalar/scale < 1.02:
+                        scales = np.array([0.2, 0.25, 0.333, 0.5, 1, 2., 3., 4., 5.])
+                        best_scale = np.argmin(np.abs(1 - scales*p_gram[0]/p_gram[2]))
+                        self.better_period[kic] = [scales[best_scale]*p_gram[0], p_gram[1], p_gram[2]]
+                        # This forces the period to the scaled period closest to 1
+                        break
         return self.better_period
                 
     def test_data(self):

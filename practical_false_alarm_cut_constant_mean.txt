@@ -1,1 +1,2 @@
-Using periodograms with data points cut out periodically (at period 8.4604378) /nOver the 1000 random-gaussian "lightcurves" used, the strongest period returned by our method in any of them had a strength of 0.000712878811485
+Using periodograms with data points cut out periodically (at period 8.4604378)
+Over the 1000 random-gaussian "lightcurves" used, the strongest period returned by our method in any of them had a strength of 0.000712878811485
